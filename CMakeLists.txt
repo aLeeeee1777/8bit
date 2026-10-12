@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(ChipSynth VERSION 0.1.0)
+project(ChipSynth VERSION 0.4.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -24,7 +24,12 @@ juce_add_plugin(ChipSynth
 target_sources(ChipSynth PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
-    Source/ChipEngine.h)
+    Source/PluginEditor.cpp
+    Source/PluginEditor.h
+    Source/ChipEngine.h
+    Source/Arp.h
+    Source/Effects.h
+    Source/Drums.h)
 
 target_compile_definitions(ChipSynth PUBLIC
     JUCE_WEB_BROWSER=0
