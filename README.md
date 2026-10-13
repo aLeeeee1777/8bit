@@ -1,4 +1,4 @@
-# ChipSynth v0.4 — سینتی‌سایزر چیپ‌تیون (VST3)
+# ChipSynth v0.6 + ChipFX — ابزار کامل چیپ‌تیون (VST3)
 
 ## چیپ‌ها (۸ تا)
 NES (2A03) · Game Boy · Master System (SN76489) · C64 SID · Atari POKEY · Atari 2600 (TIA) · AY-3-8910/YM2149 · PC Engine (HuC6280)
@@ -14,6 +14,34 @@ NES (2A03) · Game Boy · Master System (SN76489) · C64 SID · Atari POKEY · A
 | TIA | pure | Poly4 | Poly5+pulse | Poly9 | Poly5 |
 | AY-3-8910 | ۵۰٪ | انولوپ مثلثی | انولوپ اره‌ای | نویز ۱۷ بیتی | تون AND نویز |
 | PC Engine | PW (۳۲ پله) | ۵ بیتی | ۵ بیتی | LFSR | ۵ بیتی ۳۲ نمونه |
+
+## جدید در v0.6 — افکت‌های آرکید و آتاری (تب SFX)
+**تفنگ پیکسلی، لیزر، انفجار، پاورآپ، پرش، سکه...** با مود **SFX** (Mode = SFX):
+- **مولد (مثل sfxr):** دکمه‌های Shoot / Explosion / Power-up / Hit / Jump / Blip / Random یه صدای جدید می‌سازن، و Mutate یه تغییر کوچیک تصادفی روی صدای فعلی می‌ده. بعد هر کلیدی بزنی (MIDI یا کیبورد روی صفحه) شلیک می‌شه.
+- **پارامترها:** Pitch، Slide (سرعت افت پیچ = همون «پیو»)، Slide Accel، **Step Rate** (آپدیت پله‌ای پیچ مثل فریم کنسول)، Attack/Hold/Decay، Duty و Duty Sweep، ویبراتو، Pitch Jump (صدای سکه/پاورآپ)، Noise، **Retrigger Hz** (مسلسل تا وقتی کلید نگه داشته می‌شه)، Key Track (۰ = همه‌ی کلیدها یه صدا رو شلیک می‌کنن)
+- موج و نویز و پله‌های ولوم از **چیپ انتخابی** میاد (Chip flavor): NES، Atari TIA، POKEY، SID و ...
+- Crush، ریورب و افکت‌ها روی SFX هم اعمال می‌شن.
+- ۱۶ پریست SFX: Atari Shot، Pixel Blaster، Rapid Fire، Heavy Cannon، Laser Pew، Ricochet، POKEY Zap، 8-bit Explosion، Atari Boom، Machine Gun، Hit/Hurt، Jump، Power-up، Coin، Siren، Gritty Blast
+- مجموعاً ۹۴ پریست
+
+## جدید در v0.5
+**دو پلاگین:** `ChipSynth.vst3` (ساز) و `ChipFX.vst3` (افکت وکال و میکس).
+
+### ChipSynth
+- **ریورب** استریو با Size/Decay/Damping/Pre-delay/Width و **Lo-Fi** (دم ریورب بیت‌کراش و تیره می‌شه)
+- **لایه‌ها:** تا ۳ اسیلاتور، هرکدوم چیپ/موج/لول/ترنسپوز/فاین جدا (تب LAYERS)
+- **Unison** تا ۵ صدا با دیتیون و پهنای استریو
+- **ماتریکس مدولاسیون:** ۲ LFO + ModEnv برای هر نت؛ ۸ اسلات (منبع ← مقصد ← مقدار) روی Pitch، Cutoff، Resonance، PW، Level، Sync، Ring، Noise Mix، لول لایه‌ها
+- **ماتریکس گلوبال:** ۲ LFO آزاد + ۴ اسلات روی Bit Depth، Sample Rate، Drive، Chorus، Delay، Reverb و Master (مثلاً بیت‌کراش متحرک)
+- **سمپلر (Mode = Sampler):** فایل wav/aiff/flac/ogg (حداکثر ۳۰ ثانیه) روی کیبورد، Root Note، Loop، Start/End، و DAC لو-فای (Bits / Rate). مسیر فایل داخل پروژه‌ی FL ذخیره می‌شه.
+- **کیک قوی‌تر:** Kick Click، Kick Sub (ساب سینوسی)، Kick Drive + ۱۶ پریست کیک (Kick - ... و Synth Kick - ...)
+- ۷۸ پریست
+
+### ChipFX (افکت)
+پیچ‌شیفتر (±۲۴ نیم‌پرده)، بیت‌کراشر + دیستورشن (Soft/Hard/Fold)، فیلتر LP/BP/HP، گیت ریتمیک سینک به BPM (۷ الگو)، **استاتر** (تکرار آخرین تکه؛ پارامتر Stutter رو با اتوماسیون FL روشن/خاموش کن)، دیلی پینگ‌پونگ (آزاد یا سینک)، ریورب Lo-Fi. بدون تنظیم، کاملاً شفافه (مثل bypass). رابطش فعلاً لیست ساده‌ی خود JUCE هست.
+
+### رفع باگ
+دیلی/کورس نسخه‌های قبلی (۰.۲ تا ۰.۴) یه باگ نادر داشت: وقتی یه عدد اعشاری گرد می‌شد، ممکن بود یه اسپایک بلند تو خروجی بیاد. تو این نسخه درست شد.
 
 ## جدید در v0.4 — درام هشت‌بیتی و لید
 **مود Drums** (تب DRUMS یا پارامتر Mode): نت‌های MIDI رو به درام تبدیل می‌کنه. نام نت‌ها طبق FL Studio:
@@ -60,7 +88,7 @@ NES (2A03) · Game Boy · Master System (SN76489) · C64 SID · Atari POKEY · A
 - رابط گرافیکی اختصاصی
 
 ## بیلد
-با GitHub Actions (فایل .github/workflows/build.yml): همه‌ی فایل‌ها رو آپلود کن، تب Actions ← آخرین run ← Artifacts.
+با GitHub Actions (فایل .github/workflows/build.yml): همه‌ی فایل‌ها رو آپلود کن (پوشه‌ی Source/FX هم باشه)، تب Actions ← آخرین run ← Artifacts. دو خروجی می‌ده: ChipSynth-VST3-Windows و ChipFX-VST3-Windows.
 یا روی ویندوز با: cmake -B build ؛ cmake --build build --config Release
 خروجی: build\ChipSynth_artefacts\Release\VST3\ChipSynth.vst3
 

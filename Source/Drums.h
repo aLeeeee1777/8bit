@@ -9,6 +9,7 @@ enum DrumType { DKick = 0, DRim, DSnare, DClap, DSnare2, DTom, DClosedHat, DOpen
 struct DrumParams
 {
     float kickTune = 0.0f, kickDecay = 0.28f, kickSweep = 24.0f;
+    float kickClick = 0.3f, kickDrive = 0.0f, kickSub = 0.0f;
     float snareTune = 0.0f, snareTone = 0.5f, snareDecay = 0.18f;
     float hatDecay = 0.035f, openDecay = 0.35f, tomTune = 0.0f, volume = 0.9f;
     bool  noiseShort = false, authentic = true;
@@ -78,7 +79,7 @@ struct DrumVoice
     int      type = DNone, note = 36, tomIdx = 0;
     float    vel = 1.0f, chokeT = 0.0f;
     uint64_t age = 0;
-    double   t = 0.0, phase = 0.0, phase2 = 0.0, nAcc = 0.0;
+    double   t = 0.0, phase = 0.0, phase2 = 0.0, phase3 = 0.0, nAcc = 0.0;
     float    nLast = 0.0f, hpLp = 0.0f;
     Lfsr     lfsr;
 
@@ -86,7 +87,7 @@ struct DrumVoice
     {
         type = drumType; note = midiNote; tomIdx = tom; vel = velocity; age = order;
         active = true; choke = false; chokeT = 0.0f;
-        t = phase = phase2 = nAcc = 0.0; nLast = 0.0f; hpLp = 0.0f;
+        t = phase = phase2 = phase3 = nAcc = 0.0; nLast = 0.0f; hpLp = 0.0f;
         lfsr.reset (chipId);
     }
 
@@ -135,9 +136,19 @@ struct DrumVoice
             {
                 const float semis = d.kickTune + d.kickSweep * std::exp (-tq / 0.04f);
                 const float f = 50.0f * std::exp2 (semis / 12.0f);
-                out = tone (chipId, f, sr, d.authentic) * q (env (d.kickDecay))
-                    + noise (chipId, 20000.0, false, sr) * q (env (0.006f)) * 0.3f;
-                endT = d.kickDecay * 1.25f;
+                float k = tone (chipId, f, sr, d.authentic) * q (env (d.kickDecay)) * (1.0f - 0.4f * d.kickSub);
+                if (d.kickSub > 0.001f)    // سینوس ساب، بدون کوانتایز فرکانس
+                {
+                    phase3 += (double) f / sr;
+                    if (phase3 >= 1.0) phase3 -= std::floor (phase3);
+                    k += std::sin ((float) phase3 * 6.28318530718f) * q (env (d.kickDecay * 1.15f)) * d.kickSub;
+                }
+                k += noise (chipId, 20000.0, false, sr) * q (env (0.006f)) * d.kickClick;
+                k *= 1.0f / (1.0f + 0.3f * d.kickClick);   // جلوگیری از بلندی زیاد
+                if (d.kickDrive > 0.001f)
+                    k = std::tanh (k * (1.0f + d.kickDrive * 6.0f)) * (1.0f - 0.15f * d.kickDrive);
+                out = k;
+                endT = d.kickDecay * 1.3f;
                 break;
             }
             case DRim:

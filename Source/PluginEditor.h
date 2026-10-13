@@ -75,6 +75,73 @@ private:
         std::unique_ptr<APVTS::ButtonAttachment> attach;
     };
 
+    // یک ردیف ماتریکس: منبع، مقصد، مقدار
+    struct SlotRow : public juce::Component
+    {
+        SlotRow (APVTS& s, const juce::String& srcId, const juce::String& dstId, const juce::String& amtId)
+        {
+            if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (s.getParameter (srcId))) src.addItemList (c->choices, 1);
+            if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (s.getParameter (dstId))) dst.addItemList (c->choices, 1);
+            amt.setSliderStyle (juce::Slider::LinearHorizontal);
+            amt.setTextBoxStyle (juce::Slider::TextBoxRight, false, 52, 20);
+            amt.setTextBoxIsEditable (false);
+            amt.setDoubleClickReturnValue (true, 0.0);
+            addAndMakeVisible (src); addAndMakeVisible (dst); addAndMakeVisible (amt);
+            srcA = std::make_unique<APVTS::ComboBoxAttachment> (s, srcId, src);
+            dstA = std::make_unique<APVTS::ComboBoxAttachment> (s, dstId, dst);
+            amtA = std::make_unique<APVTS::SliderAttachment> (s, amtId, amt);
+        }
+        void resized() override
+        {
+            auto r = getLocalBounds();
+            src.setBounds (r.removeFromLeft (112).reduced (1));
+            r.removeFromLeft (4);
+            dst.setBounds (r.removeFromLeft (118).reduced (1));
+            r.removeFromLeft (4);
+            amt.setBounds (r);
+        }
+        juce::ComboBox src, dst;
+        juce::Slider amt;
+        std::unique_ptr<APVTS::ComboBoxAttachment> srcA, dstA;
+        std::unique_ptr<APVTS::SliderAttachment> amtA;
+    };
+
+    // دکمه‌ی بارگذاری سمپل
+    struct SamplerLoader : public juce::Component
+    {
+        explicit SamplerLoader (ChipSynthProcessor& p) : proc (p)
+        {
+            button.setButtonText ("Load sample (wav / aiff / flac / ogg)...");
+            button.onClick = [this] { chooseFile(); };
+            label.setText (proc.getSampleName().isEmpty() ? juce::String ("No sample loaded") : proc.getSampleName(),
+                           juce::dontSendNotification);
+            addAndMakeVisible (button);
+            addAndMakeVisible (label);
+        }
+        void chooseFile()
+        {
+            chooser = std::make_unique<juce::FileChooser> ("Select a sample", juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg");
+            const auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+            chooser->launchAsync (flags, [this] (const juce::FileChooser& fc)
+            {
+                const auto f = fc.getResult();
+                if (! f.existsAsFile()) return;
+                if (proc.loadSample (f)) label.setText (f.getFileName(), juce::dontSendNotification);
+                else                     label.setText ("Could not load this file", juce::dontSendNotification);
+            });
+        }
+        void resized() override
+        {
+            auto r = getLocalBounds();
+            button.setBounds (r.removeFromTop (30));
+            label.setBounds (r.removeFromTop (24));
+        }
+        ChipSynthProcessor& proc;
+        juce::TextButton button;
+        juce::Label label;
+        std::unique_ptr<juce::FileChooser> chooser;
+    };
+
     // گرید ۱۶ استپی: روشن/خاموش، اکسنت، ترنسپوز
     struct StepGrid : public juce::Component
     {
@@ -124,6 +191,30 @@ private:
         std::array<juce::Slider, 16> trSlider;
         std::array<std::unique_ptr<APVTS::ButtonAttachment>, 16> onA, accA;
         std::array<std::unique_ptr<APVTS::SliderAttachment>, 16> trA;
+    };
+
+    // دکمه‌های مولد افکت آرکید
+    struct GenButtons : public juce::Component
+    {
+        explicit GenButtons (ChipSynthProcessor& p) : proc (p)
+        {
+            static const char* names[8] = { "Shoot", "Explosion", "Power-up", "Hit / Hurt", "Jump", "Blip", "Random", "Mutate" };
+            for (size_t i = 0; i < 8; ++i)
+            {
+                btn[i].setButtonText (names[i]);
+                const int kind = (int) i;
+                btn[i].onClick = [this, kind] { proc.generateSfx (kind); };
+                addAndMakeVisible (btn[i]);
+            }
+        }
+        void resized() override
+        {
+            const int w = getWidth() / 4;
+            for (size_t i = 0; i < 8; ++i)
+                btn[i].setBounds ((int) (i % 4) * w + 2, (int) (i / 4) * 38, w - 4, 34);
+        }
+        ChipSynthProcessor& proc;
+        std::array<juce::TextButton, 8> btn;
     };
 
     struct InfoBox : public juce::Component
@@ -181,16 +272,20 @@ private:
         std::vector<std::unique_ptr<juce::Component>> owned;
     };
 
-    void knob   (Panel& p, const char* id, const char* name) { p.add (std::make_unique<KnobCell>   (proc.apvts, id, name), 84, 96); }
-    void combo  (Panel& p, const char* id, const char* name, int w = 200) { p.add (std::make_unique<ComboCell> (proc.apvts, id, name), w, 50); }
-    void toggle (Panel& p, const char* id, const char* name) { p.add (std::make_unique<ToggleCell> (proc.apvts, id, name), 200, 28); }
+    void knob   (Panel& p, const juce::String& id, const juce::String& name) { p.add (std::make_unique<KnobCell>   (proc.apvts, id, name), 84, 96); }
+    void combo  (Panel& p, const juce::String& id, const juce::String& name, int w = 200) { p.add (std::make_unique<ComboCell> (proc.apvts, id, name), w, 50); }
+    void toggle (Panel& p, const juce::String& id, const juce::String& name) { p.add (std::make_unique<ToggleCell> (proc.apvts, id, name), 200, 28); }
+    void slot   (Panel& p, const juce::String& srcId, const juce::String& dstId, const juce::String& amtId)
+    { p.add (std::make_unique<SlotRow> (proc.apvts, srcId, dstId, amtId), 440, 28); }
 
     int  layoutAll (bool apply);
     void showPage (int index);
 
+    static constexpr int numPages = 9;
+
     ChipSynthProcessor& proc;
     std::vector<std::unique_ptr<Panel>> panels;
-    std::array<juce::TextButton, 4> tabs;
+    std::array<juce::TextButton, numPages> tabs;
     int currentPage = 0;
     juce::ComboBox presetBox;
     juce::MidiKeyboardComponent keyboard;
